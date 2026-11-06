@@ -37,16 +37,26 @@ This repo has one PowerShell script that applies a set of Windows tweaks. It kee
 
 ## Install
 
-1. Download the repo (**Code → Download ZIP**, or `git clone`) and extract it.
-2. Open **PowerShell as Administrator** (Start → type `PowerShell` → *Run as administrator*).
-3. Run:
+1. Open **PowerShell as Administrator** (Start → type `PowerShell` → right-click → *Run as administrator*).
+2. Copy-paste this single line and press Enter:
 
    ```powershell
-   cd "<path-to>\px13-touchpad-battery-fix"
-   powershell -ExecutionPolicy Bypass -File .\fix.ps1 -Install
+   [Net.ServicePointManager]::SecurityProtocol='Tls12'; $f="$env:TEMP\px13-fix.ps1"; iwr 'https://raw.githubusercontent.com/Sagigamil/px13-touchpad-battery-fix/main/fix.ps1' -OutFile $f -UseBasicParsing; powershell -NoProfile -ExecutionPolicy Bypass -File $f -Install
    ```
 
-4. **Reboot** (the display change only takes effect after a reboot).
+3. **Reboot** (the display change only takes effect after a reboot).
+
+<details>
+<summary>Prefer to read the script first / install with git?</summary>
+
+```powershell
+git clone https://github.com/Sagigamil/px13-touchpad-battery-fix "$env:TEMP\px13-touchpad-battery-fix"
+notepad "$env:TEMP\px13-touchpad-battery-fix\fix.ps1"   # review it
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\px13-touchpad-battery-fix\fix.ps1" -Install
+```
+
+No git? Use **Code → Download ZIP**, extract it, and run the last line with the extracted path.
+</details>
 
 That's it. **You only need to run it once.** The install step:
 - backs up your current settings to `C:\ProgramData\TouchpadBatteryFix\backup\`
@@ -68,17 +78,10 @@ That's it. **You only need to run it once.** The install step:
 
 ## Uninstall / restore
 
-From an **Administrator** PowerShell:
+From an **Administrator** PowerShell, copy-paste this single line. It removes the scheduled task, restores the original display and touchpad registry values, and re-imports the original power plans as new copies (pick them in Power Options):
 
 ```powershell
-# 1. remove the scheduled task
-powershell -ExecutionPolicy Bypass -File C:\ProgramData\TouchpadBatteryFix\fix.ps1 -Uninstall
-
-# 2. restore original registry values (display + touchpad)
-Get-ChildItem C:\ProgramData\TouchpadBatteryFix\backup\*.reg | ForEach-Object { reg import $_.FullName }
-
-# 3. restore original power plans (imported as new copies; pick them in Power Options)
-Get-ChildItem C:\ProgramData\TouchpadBatteryFix\backup\*.pow | ForEach-Object { powercfg /import $_.FullName }
+$d='C:\ProgramData\TouchpadBatteryFix'; powershell -NoProfile -ExecutionPolicy Bypass -File "$d\fix.ps1" -Uninstall; Get-ChildItem "$d\backup\*.reg" | % { reg import $_.FullName }; Get-ChildItem "$d\backup\*.pow" | % { powercfg /import $_.FullName }
 ```
 
 Reboot afterwards.
